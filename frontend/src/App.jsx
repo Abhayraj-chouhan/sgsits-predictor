@@ -30,31 +30,30 @@ export default function App() {
     setPrediction(null);
     setLastSubmittedData(formData);
 
+    const baseUrl = 'https://sgsits-predictor-45xx.onrender.com';
+    const endpoint = formData.branch ? '/predict' : '/predict_all';
+
     try {
-      // Direct POST request to the real FastAPI backend endpoint
-      const response = await axios.post('https://sgsits-predictor-45xx.onrender.com', formData, {
-        headers: { 
-          'Content-Type': 'application/json' 
+      const response = await axios.post(`${baseUrl}${endpoint}`, formData, {
+        headers: {
+          'Content-Type': 'application/json',
         },
-        timeout: 6000
+        timeout: 65000,
       });
 
       if (response.data && response.data.status === 'success') {
-        setTimeout(() => {
-          setPrediction(response.data);
-          setLoading(false);
-        }, 1200);
+        setPrediction(response.data);
+        setLoading(false);
       } else {
         throw new Error(response.data?.detail || 'Inference error occurred.');
       }
-
     } catch (err) {
       console.error('API connection failed:', err);
       let errorMsg = 'Backend server unavailable';
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
         if (Array.isArray(detail)) {
-          errorMsg = detail.map(d => `${d.loc.join('.')}: ${d.msg}`).join(', ');
+          errorMsg = detail.map((d) => `${d.loc.join('.')}: ${d.msg}`).join(', ');
         } else if (typeof detail === 'string') {
           errorMsg = detail;
         } else {
@@ -63,13 +62,12 @@ export default function App() {
       } else if (err.message) {
         errorMsg = err.message;
       }
-      setTimeout(() => {
-        setError(errorMsg);
-        setLoading(false);
-      }, 1000);
+      setError(errorMsg);
+      setLoading(false);
     }
   };
 
+    
   const handleRetry = () => {
     if (lastSubmittedData) {
       handlePredict(lastSubmittedData);
